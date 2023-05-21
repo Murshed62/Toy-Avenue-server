@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-console.log(process.env.DB_PASS);
+
 
 //noSQL database Mongodb code
 
@@ -29,12 +29,41 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
+
+    const productCollection = client.db('toyMarketPlace').collection("products")
+
+
+    app.post('/products', async(req,res)=>{
+      const newProduct = req.body;
+      console.log(newProduct);
+      const result = await productCollection.insertOne(newProduct);
+      res.send(result);
+    })
+
+    app.get('/toy', async(req, res)=> {
+      let query = {};
+      const sort = req.query.sort;
+      if(req.query?.email){
+        query = {email:req.query.email}
+      }else if(sort){
+        const result = await productCollection.find(query) .sort({price:sort}).toArray()
+        res.send(result);
+      }else{
+        const result = await productCollection.find(query) .toArray()
+        res.send(result);
+      }
+    })
+
+    
+
+
+
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
     // Ensures that the client will close when you finish/error
-    await client.close();
+    // await client.close();
   }
 }
 run().catch(console.dir);
